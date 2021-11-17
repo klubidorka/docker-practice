@@ -1,0 +1,35 @@
+version: '3.3'
+services:
+  database:
+    image: mysql:5.6
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'db'
+      MYSQL_USER: 'klubidorka'
+      MYSQL_PASSWORD: 'secure_password'
+      MYSQL_ROOT_PASSWORD: 'super_secure_password'
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 10
+    ports:
+      - '3306:3306'
+
+  fill_database:
+    depends_on:
+      database:
+        condition: service_healthy
+    
+    build: fill_database/
+    command: python ./main.py
+    restart: on-failure:10
+    volumes: 
+      - ./data.csv:/fill_database/data.csv
+
+  server:
+    depends_on:
+      database:
+        condition: service_healthy
+    build: server/
+    ports:
+      - '8080:8080'
